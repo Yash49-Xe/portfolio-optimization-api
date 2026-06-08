@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+venv/
+env/
+.venv/
+
+wealth.db
+*.sqlite3
+
+.env
+
+.DS_Store
+Thumbs.db
