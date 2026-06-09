@@ -54,8 +54,8 @@ Follow these steps to clone the repository, configure your API keys, and boot th
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/Yash49-Xe/automated-wealth-api.git
-cd automated-wealth-api
+git clone https://github.com/Yash49-Xe/portfolio-optimization-api.git
+cd portfolio-optimization-api
 ```
 
 ### 2. Create a virtual environment and install dependencies
