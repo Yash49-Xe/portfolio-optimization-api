@@ -1,41 +1,46 @@
-import yfinance as yf
+import requests
 import sqlite3
 import pandas as pd
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+API_KEY = os.getenv("FMP_API_KEY")
 
 def update_market_data():
-    print("[SYNC WORKER] Waking up to fetch live market data...")
-    tickers = [
-        "AAPL", "MSFT", "GOOGL", "AMZN",  # Tech Giants
-        "JPM", "V",                       # Finance & Payments
-        "WMT", "PG",                      # Retail & Consumer Goods
-        "SPY", "QQQ",                     # Massive Index Funds
-        "BTC-USD", "ETH-USD"              # Cryptocurrency
-    ]
+    print("[SYNC WORKER] Waking up to fetch live data from FMP...")
+    
+    tickers = ["AAPL", "MSFT", "GOOGL", "AMZN", "JPM", "V", "WMT", "SPY", "BTCUSD", "ETHUSD"]
     all_data = []
     
     try:
+        if not API_KEY:
+            raise ValueError("API Key is missing! Check your .env file.")
+
         for ticker in tickers:
-            stock = yf.Ticker(ticker)
-            df = stock.history(period="3y")
+            url = f"https://financialmodelingprep.com/stable/historical-price-eod/full?symbol={ticker}&apikey={API_KEY}"
             
-            df = df.reset_index()
-            df = df[["Date", "Close"]].copy()
-            df["ticker"] = ticker
-            df = df.rename(columns={"Date": "date", "Close": "price"})
-            df["date"] = df["date"].dt.strftime('%Y-%m-%d')
-            all_data.append(df)
+            response = requests.get(url)
             
-        final_df = pd.concat(all_data, ignore_index=True)
-        
-        conn = sqlite3.connect("wealth.db")
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM market_data")
-        final_df.to_sql("market_data", conn, if_exists="append", index=False)
-        conn.commit()
-        conn.close()
-        
-        print("[SYNC WORKER] Database successfully updated. Going back to sleep.")
-        
+            if response.status_code != 200:
+                print(f"[API HTTP ERROR] FMP returned {response.status_code} for {ticker}: {response.text}")
+                continue
+            
+            try:
+                data = response.json()
+            except Exception as e:
+                print(f"[JSON ERROR] Could not parse FMP data for {ticker}. Raw text: {response.text[:200]}")
+                continue
+            
+            if isinstance(data, list) and len(data) > 0:
+                df = pd.DataFrame(data)
+                df = df[["date", "close"]].copy()
+                df["ticker"] = ticker
+                df = df.rename(columns={"close": "price"})
+                all_data.append(df)
+            else:
+                print(f"[API WARNING] No valid data in FMP Response for {ticker}: {data}")
+
     except Exception as e:
         print(f"[SYNC WORKER ERROR] Failed to update data: {e}")
 

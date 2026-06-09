@@ -45,5 +45,5 @@ def run_optimization():
         "expected_annual_return_percent": round(opt_return * 100, 2),
         "annual_risk_percent": round(opt_risk * 100, 2),
         "sharpe_ratio": round((opt_return - 0.02) / opt_risk, 2),
-        "optimal_allocation": allocation
+        "optimal_allocation(in %)": allocation
     }

@@ -9,7 +9,7 @@ async def scheduled_sync():
     while True:
         update_market_data()
         
-        await asyncio.sleep(300)
+        await asyncio.sleep(3600)
 
 @app.on_event("startup")
 async def startup_event():

@@ -3,4 +3,5 @@ uvicorn
 pandas
 numpy
 scipy
-yfinance
+requests
+python-dotenv
