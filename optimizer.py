@@ -3,18 +3,6 @@ import pandas as pd
 import numpy as np
 from scipy.optimize import minimize
 
-print("Loading data from SQLite...")
-conn = sqlite3.connect("wealth.db")
-df = pd.read_sql_query("SELECT * FROM market_data", conn)
-conn.close()
-
-df_pivot = df.pivot(index="date", columns="ticker", values="price")
-
-returns = df_pivot.pct_change().dropna()
-
-mean_returns = returns.mean() * 252
-cov_matrix = returns.cov() * 252
-
 def calculate_metrics(weights, mean_returns, cov_matrix):
     p_return = np.sum(mean_returns * weights)
     p_risk = np.sqrt(np.dot(weights.T, np.dot(cov_matrix, weights)))
@@ -25,6 +13,27 @@ def negative_sharpe_ratio(weights, mean_returns, cov_matrix, risk_free_rate=0.02
     return - (p_return - risk_free_rate) / p_risk
 
 def run_optimization():
+    print("Loading data from SQLite...")
+    conn = sqlite3.connect("wealth.db")
+    df = pd.read_sql_query("SELECT * FROM market_data", conn)
+    conn.close()
+
+    if df.empty:
+        raise ValueError("Market data is empty. Please wait for the background sync to finish fetching data.")
+
+    df_pivot = df.pivot(index="date", columns="ticker", values="price")
+    
+    if len(df_pivot) < 2:
+        raise ValueError("Not enough historical data in the database to calculate returns. Wait for sync worker to download FMP data.")
+        
+    returns = df_pivot.pct_change().dropna()
+    
+    if returns.empty:
+        raise ValueError("Calculated returns are empty. Ensure market data has valid varying prices.")
+
+    mean_returns = returns.mean() * 252
+    cov_matrix = returns.cov() * 252
+
     num_assets = len(mean_returns)
     args = (mean_returns, cov_matrix)
     constraints = ({'type': 'eq', 'fun': lambda x: np.sum(x) - 1})

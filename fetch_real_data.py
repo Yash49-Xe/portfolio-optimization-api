@@ -41,6 +41,13 @@ def update_market_data():
             else:
                 print(f"[API WARNING] No valid data in FMP Response for {ticker}: {data}")
 
+        if all_data:
+            final_df = pd.concat(all_data, ignore_index=True)
+            conn = sqlite3.connect("wealth.db")
+            final_df.to_sql("market_data", conn, if_exists="replace", index=False)
+            conn.close()
+            print(f"[SYNC WORKER] Successfully updated wealth.db with {len(final_df)} rows of fresh market data!")
+
     except Exception as e:
         print(f"[SYNC WORKER ERROR] Failed to update data: {e}")
 
