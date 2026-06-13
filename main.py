@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from optimizer import run_optimization
 from fetch_real_data import update_market_data
 
-app = FastAPI(title="Wealth Optimization API")
+app = FastAPI(title="Wealth and Portfolio Optimization API")
 
 async def scheduled_sync():
     while True:
