@@ -1,45 +1,57 @@
 import sqlite3
+import os
 
-conn = sqlite3.connect("wealth.db")
+DB_PATH = "wealth.db"
 
-cursor = conn.cursor()
+def setup_database():
+    if os.path.exists(DB_PATH):
+        print(f"[SETUP] '{DB_PATH}' already exists. Ensuring all tables are present...")
+    else:
+        print(f"[SETUP] Creating new database '{DB_PATH}'...")
 
-query = """
-    CREATE TABLE market_data (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        date TEXT,
-        ticker TEXT,
-        price REAL
-    );
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
 
-    CREATE TABLE transactions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        date TEXT,
-        type TEXT,
-        ticker TEXT,
-        share REAL,
-        price_per_share REAL,
-        total_amount REAL
-    );
+    cursor.execute("PRAGMA journal_mode=WAL;")
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS market_data (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            date        TEXT    NOT NULL,
+            ticker      TEXT    NOT NULL,
+            price       REAL    NOT NULL,
+            UNIQUE(date, ticker)
+        );
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS treasury_rates (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            date        TEXT    NOT NULL UNIQUE,
+            rate_10yr   REAL    NOT NULL
+        );
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS transactions (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            date            TEXT    NOT NULL,
+            type            TEXT    NOT NULL,
+            ticker          TEXT    NOT NULL,
+            shares          REAL    NOT NULL,
+            price_per_share REAL    NOT NULL,
+            total_amount    REAL    NOT NULL
+        );
+    """)
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    print(f"[SETUP] Database '{DB_PATH}' is ready.")
+    print("[SETUP] Tables ensured: market_data, treasury_rates, transactions")
+    print("[SETUP] Run the app — the background sync worker will populate market_data and treasury_rates automatically.")
 
 
-    INSERT INTO market_data
-    VALUES
-    (1,"2026-06-08","ABC",1299),
-    (2,"2026-06-08","AAC",1399),
-    (3,"2026-06-08","ABB",1199),
-    (4,"2026-06-08","ACC",1259);
-
-    INSERT INTO transactions
-    VALUES
-    (1,"2026-06-08","deposit","AAB",12,247,24290),
-    (2,"2026-06-08","deposit","NAB",10,272,24220),
-    (3,"2026-06-08","deposit","CAB",11,243,242330);
-"""
-cursor.executescript(query)
-
-conn.commit()
-cursor.close()
-conn.close()
-
-print("Database 'wealth.db' created successfully with mock data!")
+if __name__ == "__main__":
+    setup_database()
