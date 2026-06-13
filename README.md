@@ -79,7 +79,7 @@ FMP_API_KEY=your_actual_api_key_here
 The architecture includes an automated `asyncio` background worker — no manual database setup is required. On startup, the worker authenticates with FMP, downloads historical data, builds the SQLite database, and opens the API.
 
 ```bash
-python -m uvicorn main:app --reload
+python -m uvicorn main:app --host 0.0.0.0 --reload
 ```
 
 ---
